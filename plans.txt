@@ -1,0 +1,8 @@
+There are some enhancements planned for this script:
+- error trapping in case core server can't be connected
+- message via pager in case core server is disconnected
+- include more details in the message (longer pager text needed)
+- logging of result code returned by core
+- limited number of resend attempts in case result code is negative
+- warning via pager in case no weather data could be pulled
+
