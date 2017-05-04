@@ -1,0 +1,7 @@
+May 4th. 2017
+- configuration file has been redesigned to make it easier to edit;
+- configuration options have been merged with the configuration for the DAPNETAPRS script;
+- when starting the script, an optional configuration file can be added as argument -c= . Different configuration files can be stored and called by the script when needed. No argument runs the script with 'config.cfg'
+- error trapping and logging have been redesigned
+- file with dependencies has been added
+- change log has been added

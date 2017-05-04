@@ -1,0 +1,5 @@
+This script requires some additional libraries on top of the Python installation. Make sure to install the Python 3 version of these libraries!
+
+python3-metaconfig
+python3-requests
+python3-urllib3
