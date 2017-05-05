@@ -1,13 +1,13 @@
-#DAPWeather can be used to send messages with weather data via DAPNet
-#All variables / credentials are to be set in the file config.py
-#Ronald Bouwens - PE2KMV, april 2017
+#DAPWeather can be used to send messages with weather data via DAPNet 
+#All variables / credentials are to be set in the file config.py Ronald 
+#Bouwens - PE2KMV, May 2017
 
 #this script is layed out for Python 3
 #make sure to install the correct Python 3 packages to have all functions available
 
 
 #import the configuration file
-import config
+import configparser
 import requests
 import urllib.request
 import json
@@ -15,23 +15,44 @@ import decimal
 import os.path
 import datetime
 import time
+import argparse
+import logging
+import sys
 
+logging.basicConfig(filename='dapnet.log',level=logging.CRITICAL)
+
+#search for optional configuration file
+parseObj = argparse.ArgumentParser()
+parseObj.add_argument('-c','-config',type=str,help='Provide an optional config file',default='config.cfg')
+args = parseObj.parse_args()
+
+#assign configuration file to cfg
+config_file = os.path.join(os.path.dirname(__file__),args.c)
+cfg = configparser.RawConfigParser()
+cfg.read(config_file)
+
+#setup logging system
+logger = logging.getLogger('dapnet')
+handler = logging.FileHandler(cfg.get('misc','logfile'))
+logformat = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+handler.setFormatter(logformat)
+logger.addHandler(handler)
+logger.setLevel(logging.WARNING)
 
 #assign variables with data of the config file
-username = config.user['username']
-password = config.user['password']
-datenotation = config.user['datenotation']
-callsign = config.pager['callsign']
-transmittergrp = config.pager['transmittergrp']
-coreurl = config.pager['coreurl']
-weatherurl = config.weather['url']
-weathercity = config.weather['city']
-weathercountry = config.weather['countrycode']
-weatherapi = config.weather['key']
-weatherunits = config.weather['units']
-weatherahead = int(config.weather['ahead']/3)
-debugmode = config.user['debug']
-logfile = 'dapweather.log'
+username = cfg.get('user','username')
+password = cfg.get('user','password')
+datenotation = cfg.get('user','datenotation')
+callsign = cfg.get('dapnet','callsign')
+transmittergrp = cfg.get('dapnet','transmittergrp')
+baseurl = cfg.get('dapnet','baseurl')
+coreurl = cfg.get('dapnet','coreurl')
+weatherurl = cfg.get('weather','url')
+weathercity = cfg.get('weather','city')
+weathercountry = cfg.get('weather','countrycode')
+weatherapi = cfg.get('weather','key')
+weatherunits = cfg.get('weather','units')
+weatherahead = int(int(cfg.get('weather','ahead'))/3)
 
 #date and time converter
 def convert_date(unixtime):
@@ -51,11 +72,17 @@ def create_url(cityname,countryname):
 
 #fetch data
 def data_fetch(full_url):
-	url = urllib.request.urlopen(full_url)
-	output = url.read().decode('utf-8')
-	raw_api_dict = json.loads(output)
-	url.close()
-	return raw_api_dict
+	try:
+		url = urllib.request.urlopen(full_url)
+		output = url.read().decode('utf-8')
+		raw_api_dict = json.loads(output)
+		url.close()
+	except:
+		#no weather data retrieved, write log and bail out
+		logger.error('Weather data could not be retrieved')
+		sys.exit(0)
+	else:	
+		return raw_api_dict
 
 def data_organizer(raw_api_dict):
     data = dict(
@@ -75,16 +102,8 @@ def data_output(data):
 
 #send page
 msgtext = data_output(data_organizer(data_fetch(create_url(weathercity,weathercountry))))
-requests.post(coreurl,auth=(username,password),json={'text':msgtext,'callSignNames':[callsign],'transmitterGroupNames':[transmittergrp],'emergency':False})
 
-#if debug mode is enabled, check whether log file exists, if necessary create and write log
-if debugmode:
-	now = datetime.datetime.now()
-	timestamp = str(now.year) + str(now.month) + str(now.day) + ' ' + str(now.hour) + str(now.minute) + str(now.second)
-	if os.path.isfile(logfile):
-		debugfile = open(logfile,'a')
-	else:
-		debugfile = open(logfile,'w')
-	debugfile.write(timestamp + ': Details: callsign ' + callsign + ' | trxgroup ' + transmittergrp + '\n')
-	debugfile.write(timestamp + ': ' + msgtext +'\n')
-	debugfile.write('\n')
+req = requests.post(baseurl + coreurl,auth=(username,password),json={'text':msgtext,'callSignNames':[callsign],'transmitterGroupNames':[transmittergrp],'emergency':False})
+
+if req.status_code == 401:
+	logger.error('Message could not be sent')
