@@ -27,8 +27,9 @@ parseObj.add_argument('-c','-config',type=str,help='Provide an optional config f
 args = parseObj.parse_args()
 
 #assign configuration file to cfg
+config_file = os.path.join(os.path.dirname(__file__),args.c)
 cfg = configparser.RawConfigParser()
-cfg.read(args.c)
+cfg.read(config_file)
 
 #setup logging system
 logger = logging.getLogger('dapnet')
