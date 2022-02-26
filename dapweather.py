@@ -56,9 +56,9 @@ weatherahead = int(int(cfg.get('weather','ahead'))/3)
 
 #date and time converter
 def convert_date(unixtime):
-	if datenotation is 'nl':
+	if datenotation == 'nl':
 		outputdate = datetime.datetime.fromtimestamp(unixtime).strftime('%d-%m-%Y %H:%M')
-	elif datenotation is 'de':
+	elif datenotation == 'de':
 		outputdate = datetime.datetime.fromtimestamp(unixtime).strftime('%d.%m.%Y %H:%M')
 	else:
 		outputdate = datetime.datetime.fromtimestamp(unixtime).strftime('%m/%d/%Y %H:%M')
